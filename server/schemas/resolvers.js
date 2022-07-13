@@ -13,7 +13,7 @@ const resolvers = {
         },
 
         me: async (parent, args, context) => {
-        if (context.user) {
+        if (context.User) {
             return User.findOne({ _id: context.user._id });
         }
         throw new AuthenticationError('You need to be logged in!');
@@ -22,9 +22,10 @@ const resolvers = {
 
     Mutation: {
         addUser: async (parent, { username, email, password }) => {
+            console.log("sign up!!!!!!");
         const user = await User.create({ username, email, password });
         const token = signToken(user);
-
+            console.log(token);
         return { token, user };
         },
         login: async (parent, { email, password }) => {
