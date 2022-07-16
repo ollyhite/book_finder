@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useMutation, useQuery } from "@apollo/client";
 import {
   Jumbotron,
   Container,
@@ -6,41 +7,22 @@ import {
   Card,
   Button,
 } from "react-bootstrap";
-
-import { getMe, deleteBook } from "../utils/API";
 import Auth from "../utils/auth";
-import { removeBookId } from "../utils/localStorage";
+import { REMOVE_BOOK } from "../utils/mutations";
+import { QUERY_ME } from "../utils/queries";
 
 const SavedBooks = () => {
-  const [userData, setUserData] = useState({});
-
-  // use this to determine if `useEffect()` hook needs to run again
-  const userDataLength = Object.keys(userData).length;
-
-  useEffect(() => {
-    const getUserData = async () => {
-      try {
-        const token = Auth.loggedIn() ? Auth.getToken() : null;
-
-        if (!token) {
-          return false;
-        }
-
-        const response = await getMe(token);
-
-        if (!response.ok) {
-          throw new Error("something went wrong!");
-        }
-
-        const user = await response.json();
-        setUserData(user);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    getUserData();
-  }, [userDataLength]);
+  //try to get me data to find saveBooks list
+  const { loading, data, error: userError } = useQuery(QUERY_ME);
+  const userData = data?.me || {};
+  if (userError) {
+    console.log(JSON.stringify(userError));
+  }
+  // console.log("userData", userData);
+  const [removeBook, { error }] = useMutation(REMOVE_BOOK);
+  if (error) {
+    console.log(JSON.stringify(error));
+  }
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
   const handleDeleteBook = async (bookId) => {
@@ -51,29 +33,21 @@ const SavedBooks = () => {
     }
 
     try {
-      const response = await deleteBook(bookId, token);
-      // const { data } = await removeSkill({
-      //   variables: { skill },
-      // });
-
-      if (!response.ok) {
-        throw new Error("something went wrong!");
-      }
-
-      const updatedUser = await response.json();
-      setUserData(updatedUser);
-      // upon success, remove book's id from localStorage
-      removeBookId(bookId);
+      const { data } = await removeBook({
+        variables: { bookId },
+      });
+      console.log(data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // if data isn't here yet, say so
-  if (!userDataLength) {
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
+  if (!userData.savedBooks.length) {
     return <h2>No book save yet!!!</h2>;
   }
-
   return (
     <>
       <Jumbotron fluid className="text-light bg-dark">
