@@ -15,6 +15,7 @@ const SavedBooks = () => {
   //try to get me data to find saveBooks list
   const { loading, data, error: userError } = useQuery(QUERY_ME);
   const userData = data?.me || {};
+  console.log("data", data);
   if (userError) {
     console.log(JSON.stringify(userError));
   }
